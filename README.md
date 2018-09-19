@@ -8,8 +8,8 @@ Our team plans to illustrate the major engineering advances in racing technology
 
 #### Links
 
-Formula One Infographics: https://www.behance.net/gallery/64879955/Formula-One-Infographics
+*Formula One Infographics: https://www.behance.net/gallery/64879955/Formula-One-Infographics*
 
-Formula One Database Images: http://ergast.com/mrd/db/
+*Formula One Database Images: http://ergast.com/mrd/db/*
 
-Project Proposal: https://docs.google.com/document/d/1F48o8cWBab9KFUWHWGT50Runi5j_qlJuWGMgI7QcUXI/edit?usp=sharing
+*Project Proposal: https://docs.google.com/document/d/1F48o8cWBab9KFUWHWGT50Runi5j_qlJuWGMgI7QcUXI/edit?usp=sharing*
