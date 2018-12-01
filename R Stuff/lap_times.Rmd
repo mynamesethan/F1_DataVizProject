@@ -1,0 +1,167 @@
+---
+title: "F1 Stuff"
+author: "Joe Stoica"
+date: "11/29/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(ggthemes)
+```
+
+```{r}
+driver <- read_csv("driver.csv")
+driver_standings <- read_csv("driver_standings.csv")
+constructor_results <- read_csv("constructor_results.csv")
+races <- read_csv("races.csv")
+```
+
+```{r}
+lap_times <- read_csv("mean_lap_times.csv")
+
+x <- lap_times %>% 
+  group_by(circuit_name) %>% 
+  count() %>% 
+  filter(n >= 12) %>% 
+  select(circuit_name) 
+
+tracks <- dput(x$circuit_name)
+
+lap_times <- lap_times %>%
+  filter(circuit_name %in% tracks) %>% 
+  droplevels()
+
+
+# Convert y to difftime
+lap_times$time <- as.difftime(lap_times$time/1000, units = 'secs')
+```
+
+```{r}
+#lap_time_plot <- 
+lap_times %>% 
+  ggplot(aes(x = year, y = time)) + 
+  facet_wrap(.~circuit_name, scales = "free") + 
+  geom_point() +
+  geom_line() +
+  theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(),
+        axis.line = element_line()) +
+  scale_y_time(labels = function(l) strftime(l, '%M:%S')) + 
+  labs(title = "How has Mean Lap Time Changed throughout Formula 1 Circuits?")+
+  NULL 
+
+#ggsave(filename = "lap_time_plot.png", lap_time_plot, height = 9, width = 16)
+```
+
+```{r}
+no <- read_csv("no_mean_lap_times.csv")
+
+min_time <- no %>% 
+  group_by(year, circuit_name, name) %>% 
+  summarise(time = min(time))
+
+min_time <- min_time %>% 
+  group_by(circuit_name) %>% 
+  mutate(lowest = (min(time) == time))
+
+min_time <-  min_time %>%
+  filter(circuit_name %in% tracks)
+
+# Convert y to difftime
+min_time$time <- as.difftime(min_time$time/1000, units = 'secs')
+```
+
+```{r worst}
+worst <- min_time %>% 
+  ggplot(aes(x = year, y = time, color = circuit_name)) + 
+  geom_point() +
+  geom_line() +
+  scale_y_time(labels = function(l) strftime(l, '%M:%S')) + 
+  NULL
+
+ggsave(worst, filename = "worst.png",height = 9, width = 16)
+```
+
+
+
+```{r}
+notgreat <- min_time %>% 
+  mutate(label = if_else(year == max(year), as.character(circuit_name), NA_character_)) %>%
+  ggplot(aes(x = year, y = time, color = circuit_name)) + 
+  geom_point() +
+  geom_line() +
+  scale_y_time(labels = function(l) strftime(l, '%M:%S')) + 
+  labs(title = "How has the Fastest Lap Time Changed for Formula 1 Circuits?") +
+  ggrepel::geom_label_repel(aes(label = label), xlim = 2020, label.size = .1, na.rm = TRUE) +
+  guides(color=FALSE) + 
+  theme_fivethirtyeight() +
+  theme(legend.direction = "vertical",
+        legend.position  = "right") +
+  scale_x_continuous(limits = c(1995, 2020))+
+  NULL
+
+ggsave(notgreat, filename = "notgreat.png",height = 9, width = 16)
+```
+
+```{r}
+min_time %>% 
+  ggplot(aes(x = year, y = time)) + 
+  geom_point() +
+  geom_line() +
+  facet_wrap(.~circuit_name, scales = "free") + 
+  theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(),
+        axis.line = element_line(),
+        axis.ticks = element_line()) +
+  scale_y_time(labels = function(l) strftime(l, '%M:%S')) + 
+  labs(title = "How has the Fastest Lap Time Changed for Formula 1 Circuits?",
+       subtitle = "Fastest Lap Time in Red") + 
+  guides(color=FALSE) + 
+  NULL
+```
+
+
+```{r best final}
+min_time_plot <- min_time %>% 
+  ggplot(aes(x = year, y = time)) + 
+  geom_line() +
+  geom_point() +
+  geom_point(aes(color = lowest)) +
+  facet_wrap(.~circuit_name, scales = "free") + 
+  theme_fivethirtyeight() +
+  theme(panel.grid.major = element_blank(),
+        axis.line = element_line(),
+        axis.ticks = element_line()) +
+  scale_y_time(labels = function(l) strftime(l, '%M:%S')) + 
+  labs(title = "How has the Fastest Lap Time Changed for Formula 1 Circuits?",
+       subtitle = "Fastest Circuit Lap Time Highlighted in Red") + 
+  scale_color_manual(values = c(NA, "red")) +
+  guides(color=FALSE) + 
+  NULL
+
+ggsave(filename = "best_plot.png", min_time_plot, height = 9, width = 16)
+```
+
+he race was run in wet weather, causing significant attrition and setting a record for the fewest cars (4) to be running at the end of a Grand Prix race.
+
+
+
+
+```{r}
+pit_stops <- read_csv("pit_stops.csv")
+races_sub <- races %>% select(raceId, year, circuitId, name)
+
+pit_stops <- pit_stops %>% 
+  left_join(races_sub, by = "raceId")
+
+driver_sub <- driver %>%
+  select(driverId, forename, surname) %>% 
+  unite(col = "driver_name", forename, surname, sep = " ")
+
+pit_stops <- pit_stops %>% 
+  left_join(driver_sub, by = "driverId") %>% 
+  select(-c(raceId, driverId))
+```
+
