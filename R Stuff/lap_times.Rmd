@@ -16,6 +16,7 @@ driver <- read_csv("driver.csv")
 driver_standings <- read_csv("driver_standings.csv")
 constructor_results <- read_csv("constructor_results.csv")
 races <- read_csv("races.csv")
+circuits <- read_csv("circuits.csv")
 ```
 
 ```{r}
@@ -146,9 +147,6 @@ ggsave(filename = "best_plot.png", min_time_plot, height = 9, width = 16)
 
 he race was run in wet weather, causing significant attrition and setting a record for the fewest cars (4) to be running at the end of a Grand Prix race.
 
-
-
-
 ```{r}
 pit_stops <- read_csv("pit_stops.csv")
 races_sub <- races %>% select(raceId, year, circuitId, name)
@@ -162,6 +160,100 @@ driver_sub <- driver %>%
 
 pit_stops <- pit_stops %>% 
   left_join(driver_sub, by = "driverId") %>% 
-  select(-c(raceId, driverId))
+  select(-c(raceId, driverId)) 
+
+pit_stops <- pit_stops %>% 
+  rename(circuitID = circuitId) %>% 
+  left_join(circuits %>% select(circuitID, name), by = "circuitID") %>% 
+  rename(circuit = name.y,
+         race = name.x)
+
+pit_stop_tracks <- pit_stops %>% 
+  group_by(circuit) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  ungroup() %>%
+  top_n(n = 16) %>% 
+  select(circuit)
+
+
+pit_stop_tracks <- c("Marina Bay Street Circuit", "Shanghai International Circuit", 
+                     "Hungaroring", "Circuit de Barcelona-Catalunya", "Autódromo José Carlos Pace", 
+                     "Sepang International Circuit", "Bahrain International Circuit", 
+                     "Suzuka Circuit", "Circuit de Spa-Francorchamps", "Silverstone Circuit", 
+                     "Circuit Gilles Villeneuve", "Albert Park Grand Prix Circuit", 
+                     "Circuit de Monaco", "Yas Marina Circuit", "Autodromo Nazionale di Monza", 
+                     "Hockenheimring")
+
+pit_stops <-  pit_stops %>% 
+  filter(circuit %in% pit_stop_tracks)
+```
+
+```{r}
+pit_stops %>% 
+  ggplot(aes(year, duration, color = circuit)) +
+  geom_point()
+```
+
+```{r}
+pit_stops %>% 
+  ggplot(aes(year, as.numeric(duration))) +
+  geom_point() +
+  facet_wrap(.~circuit)
+```
+
+```{r}
+# bad_line <- pit_stops %>% 
+#   ggplot(aes(year, as.numeric(duration))) +
+#   geom_smooth() +
+#   facet_wrap(. ~ circuit, scales = "free") +
+#   theme_fivethirtyeight() +
+#   theme(axis.title = element_text()) + 
+#   labs(x = "Year", y = "Seconds",
+#        title = "How have Pit Stop Times Changed in Formula 1?")
+# 
+# ggsave(bad_line, filename = "bad_line.png")
+```
+
+```{r}
+# line_plot <- pit_stops %>% 
+#   ggplot(aes(year, as.numeric(duration))) +
+#   geom_smooth(color = "black", se = FALSE) +
+#   facet_wrap(. ~ circuit, scales = "free") +
+#   theme_fivethirtyeight() +
+#   theme(axis.title = element_text()) + 
+#   labs(x = "Year", y = "Seconds",
+#        title = "How have Pit Stop Times Changed in Formula 1?")
+# ggsave(line_plot, filename = "line_plot.png")
+```
+
+```{r}
+non_tufte_plot <- pit_stops %>% 
+  ggplot(aes(factor(year), as.numeric(duration))) +
+  geom_boxplot() +
+  facet_wrap(. ~ circuit, scales = "free") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(color = "#e9e9e9")) + 
+  labs(x = "Year", y = "Seconds",
+       title = "How have Pit Stop Times Changed in Formula 1?")
+
+ggsave(non_tufte_plot, filename = "non_tufte_plot.png")
+```
+
+```{r}
+tufte_plot <- pit_stops %>% 
+  ggplot(aes(factor(year), as.numeric(duration))) +
+  geom_tufteboxplot() + 
+  facet_wrap(. ~ circuit, scales = "free") +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(color = "#e9e9e9")) + 
+  labs(x = "Year", y = "Seconds",
+       title = "How have Pit Stop Times Changed in Formula 1?")
+
+ggsave(tufte_plot, filename = "tufte_plot.png")
 ```
 
