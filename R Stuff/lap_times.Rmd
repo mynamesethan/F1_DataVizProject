@@ -40,20 +40,24 @@ lap_times$time <- as.difftime(lap_times$time/1000, units = 'secs')
 ```
 
 ```{r}
-#lap_time_plot <- 
-lap_times %>% 
+mean_lap_time_plot <- lap_times %>% 
+  group_by(circuit_name) %>% 
+  mutate(lowest = (min(time) == time)) %>% 
   ggplot(aes(x = year, y = time)) + 
   facet_wrap(.~circuit_name, scales = "free") + 
-  geom_point() +
   geom_line() +
+  geom_point() +
+  geom_point(aes(color = lowest)) +
   theme_fivethirtyeight() +
   theme(panel.grid.major = element_blank(),
         axis.line = element_line()) +
   scale_y_time(labels = function(l) strftime(l, '%M:%S')) + 
   labs(title = "How has Mean Lap Time Changed throughout Formula 1 Circuits?")+
-  NULL 
+  scale_color_manual(values = c(NA, "red")) +
+  guides(color=FALSE) + 
+  NULL
 
-#ggsave(filename = "lap_time_plot.png", lap_time_plot, height = 9, width = 16)
+ggsave(filename = "mean_lap_time_plot.png", mean_lap_time_plot, height = 9, width = 16)
 ```
 
 ```{r}
@@ -147,6 +151,8 @@ ggsave(filename = "best_plot.png", min_time_plot, height = 9, width = 16)
 
 he race was run in wet weather, causing significant attrition and setting a record for the fewest cars (4) to be running at the end of a Grand Prix race.
 
+
+
 ```{r}
 pit_stops <- read_csv("pit_stops.csv")
 races_sub <- races %>% select(raceId, year, circuitId, name)
@@ -190,16 +196,20 @@ pit_stops <-  pit_stops %>%
 ```
 
 ```{r}
-pit_stops %>% 
+pit_stops_ugly <- pit_stops %>% 
   ggplot(aes(year, duration, color = circuit)) +
   geom_point()
+
+ggsave(pit_stops_ugly, filename = "pit_stops_ugly.png",height = 9, width = 16)
 ```
 
 ```{r}
-pit_stops %>% 
+pit_stops_lesss_ugly <- pit_stops %>% 
   ggplot(aes(year, as.numeric(duration))) +
   geom_point() +
   facet_wrap(.~circuit)
+
+ggsave(pit_stops_lesss_ugly, filename = "pit_stops_lesss_ugly.png",height = 9, width = 16)
 ```
 
 ```{r}
@@ -239,7 +249,7 @@ non_tufte_plot <- pit_stops %>%
   labs(x = "Year", y = "Seconds",
        title = "How have Pit Stop Times Changed in Formula 1?")
 
-ggsave(non_tufte_plot, filename = "non_tufte_plot.png")
+ggsave(non_tufte_plot, filename = "non_tufte_plot.png", height = 9, width = 16)
 ```
 
 ```{r}
@@ -254,6 +264,6 @@ tufte_plot <- pit_stops %>%
   labs(x = "Year", y = "Seconds",
        title = "How have Pit Stop Times Changed in Formula 1?")
 
-ggsave(tufte_plot, filename = "tufte_plot.png")
+ggsave(tufte_plot, filename = "tufte_plot.png", height = 9, width = 16)
 ```
 
